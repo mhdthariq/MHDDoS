@@ -63,7 +63,7 @@ func LoadProxies(filename string, proxyType int) ([]Proxy, error) {
 
 	var proxies []Proxy
 	scanner := bufio.NewScanner(file)
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -88,7 +88,7 @@ func ParseProxy(proxyStr string, proxyType int) (*Proxy, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		host := u.Hostname()
 		port := u.Port()
 		if port == "" {

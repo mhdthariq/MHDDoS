@@ -144,10 +144,10 @@ func updateNetworkStats() {
 	// This is a simplified version as Go doesn't have built-in cross-platform
 	// network stats like Python's psutil. In a real implementation, you would
 	// need platform-specific code or use /proc/net/dev on Linux
-	currentStats.BytesSent += 1024      // Placeholder
-	currentStats.BytesReceived += 2048  // Placeholder
-	currentStats.PacketsSent += 10      // Placeholder
-	currentStats.PacketsRecv += 20      // Placeholder
+	currentStats.BytesSent += 1024     // Placeholder
+	currentStats.BytesReceived += 2048 // Placeholder
+	currentStats.PacketsSent += 10     // Placeholder
+	currentStats.PacketsRecv += 20     // Placeholder
 }
 
 // runCheck checks if a website is online

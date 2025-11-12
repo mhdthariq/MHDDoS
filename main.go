@@ -156,7 +156,7 @@ func runLayer7Attack(method, target string, cfg *config.Config, wg *sync.WaitGro
 
 	// Monitor attack
 	monitorAttack(duration, method, target, stopChan, sigChan)
-	
+
 	wg.Wait()
 	return nil
 }
@@ -225,14 +225,14 @@ func runLayer4Attack(method, target string, cfg *config.Config, wg *sync.WaitGro
 
 	// Create attack configuration
 	attackCfg := &attacks.Layer4Config{
-		Method:      method,
-		Host:        host,
-		Port:        port,
-		Threads:     threads,
-		Duration:    duration,
-		Proxies:     proxies,
-		Reflectors:  reflectors,
-		ProtocolID:  cfg.MinecraftProtocol,
+		Method:     method,
+		Host:       host,
+		Port:       port,
+		Threads:    threads,
+		Duration:   duration,
+		Proxies:    proxies,
+		Reflectors: reflectors,
+		ProtocolID: cfg.MinecraftProtocol,
 	}
 
 	// Start attack
@@ -243,7 +243,7 @@ func runLayer4Attack(method, target string, cfg *config.Config, wg *sync.WaitGro
 	// Monitor attack
 	targetStr := fmt.Sprintf("%s:%d", host, port)
 	monitorAttack(duration, method, targetStr, stopChan, sigChan)
-	
+
 	wg.Wait()
 	return nil
 }
