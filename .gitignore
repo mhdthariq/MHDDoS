@@ -2,3 +2,15 @@ venv
 /.idea/
 files/proxies/*
 .DS_Store
+
+# Go specific
+mhddos
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work

@@ -1,5 +1,5 @@
 <h1 align="center">MHDDoS - DDoS Attack Script With 57 Methods</h1>
-<em><h5 align="center">(Programming Language - Python 3)</h5></em>
+<em><h5 align="center">(Programming Languages - Python 3 & Go)</h5></em>
 
 <p align="center">
 <a href="#"><img alt="MH-DDoS forks" src="https://img.shields.io/github/forks/MatrixTM/MHDDoS?style=for-the-badge"></a>
@@ -110,6 +110,8 @@ You can download it from [GitHub Releases](https://github.com/MatrixTM/MHDDoS/re
 
 **Requirements**
 
+#### Python Version
+
 * [dnspython](https://github.com/rthalley/dnspython)
 * [cfscrape](https://github.com/Anorov/cloudflare-scrape)
 * [impacket](https://github.com/SecureAuthCorp/impacket)
@@ -120,6 +122,11 @@ You can download it from [GitHub Releases](https://github.com/MatrixTM/MHDDoS/re
 * [certifi](https://github.com/certifi/python-certifi)
 * [psutil](https://github.com/giampaolo/psutil)
 * [yarl](https://github.com/aio-libs/yarl)
+
+#### Go Version
+
+* [Go 1.19 or higher](https://golang.org/dl/)
+
 ---
 
 ## Documentation
@@ -128,16 +135,36 @@ You can read it from [GitHub Wiki](https://github.com/MatrixTM/MHDDoS/wiki)
 
 **Clone and Install Script**
 
+#### Python Version
+
 ```shell script
 git clone https://github.com/MatrixTM/MHDDoS.git
 cd MHDDoS
 pip install -r requirements.txt
+python3 start.py <arguments>
+```
+
+#### Go Version
+
+```shell script
+git clone https://github.com/MatrixTM/MHDDoS.git
+cd MHDDoS
+go build -o mhddos main.go
+./mhddos <arguments>
 ```
 
 **One-Line Installing on Fresh VPS**
 
+#### Python Version
+
 ```shell script
 apt -y update && apt -y install curl wget libcurl4 libssl-dev python3 python3-pip make cmake automake autoconf m4 build-essential git && git clone https://github.com/MatrixTM/MHDDoS.git && cd MH* && pip3 install -r requirements.txt
+```
+
+#### Go Version
+
+```shell script
+apt -y update && apt -y install curl wget git golang-go && git clone https://github.com/MatrixTM/MHDDoS.git && cd MH* && go build -o mhddos main.go
 ```
 
 **Docker**
