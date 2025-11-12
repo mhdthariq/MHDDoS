@@ -53,7 +53,7 @@ func HumanFormat(num int64) string {
 	if num <= 999 {
 		return fmt.Sprintf("%d", num)
 	}
-	
+
 	exp := 0
 	fnum := float64(num)
 	for fnum >= 1000 && exp < len(suffixes)-1 {

