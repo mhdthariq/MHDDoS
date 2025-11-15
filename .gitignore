@@ -5,6 +5,7 @@ files/proxies/*
 
 # Go specific
 mhddos
+MHDDoS
 bin/
 *.exe
 *.exe~
