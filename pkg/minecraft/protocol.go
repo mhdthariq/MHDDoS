@@ -127,3 +127,33 @@ func Chat(protocolVersion int, message string) []byte {
 
 	return Data(packet.Bytes())
 }
+
+// HandshakeForwarded creates a Minecraft handshake packet with BungeeCord forwarding
+func HandshakeForwarded(host string, port uint16, protocolVersion int, state int, ip string, uuid string) []byte {
+	var packet bytes.Buffer
+
+	// Packet ID (0x00 for handshake)
+	packet.Write(VarInt(0x00))
+
+	// Protocol version
+	packet.Write(VarInt(protocolVersion))
+
+	// Server address with forwarding info (BungeeCord format)
+	var addressData bytes.Buffer
+	addressData.WriteString(host)
+	addressData.WriteByte(0x00)
+	addressData.WriteString(ip)
+	addressData.WriteByte(0x00)
+	addressData.WriteString(uuid)
+
+	packet.Write(VarInt(addressData.Len()))
+	packet.Write(addressData.Bytes())
+
+	// Server port
+	packet.Write(Short(port))
+
+	// Next state (1 for status, 2 for login)
+	packet.Write(VarInt(state))
+
+	return Data(packet.Bytes())
+}
