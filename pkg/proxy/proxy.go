@@ -286,8 +286,17 @@ func CheckAllProxies(proxies []Proxy, testURL string, timeout time.Duration, thr
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
+	// Use a higher thread count for proxy checking (at least 100, max 500)
+	checkThreads := threads
+	if checkThreads < 100 {
+		checkThreads = 100
+	}
+	if checkThreads > 500 {
+		checkThreads = 500
+	}
+
 	// Create a semaphore to limit concurrent checks
-	sem := make(chan struct{}, threads)
+	sem := make(chan struct{}, checkThreads)
 
 	for _, proxy := range proxies {
 		wg.Add(1)
