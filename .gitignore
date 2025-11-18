@@ -3,12 +3,6 @@ venv
 files/proxies/*
 .DS_Store
 
-# Python specific
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-
 # Go specific
 mhddos
 MHDDoS
@@ -16,6 +10,7 @@ bin/
 *.exe
 *.exe~
 *.dll
+*.so
 *.dylib
 *.test
 *.out
