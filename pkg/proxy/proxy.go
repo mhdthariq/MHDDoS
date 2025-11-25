@@ -344,7 +344,7 @@ func SaveProxies(proxies []Proxy, filename string) error {
 func LoadOrDownloadProxies(filename string, proxyType int, cfg *config.Config, testURL string, threads int) ([]Proxy, error) {
 	// Validate proxy type
 	if proxyType != 0 && proxyType != 1 && proxyType != 4 && proxyType != 5 && proxyType != 6 {
-		return nil, fmt.Errorf("socks Type Not Found [4, 5, 1, 0, 6]")
+		return nil, fmt.Errorf("invalid proxy type: must be one of [0, 1, 4, 5, 6]")
 	}
 
 	// Handle RANDOM type (6)
@@ -384,7 +384,7 @@ func LoadOrDownloadProxies(filename string, proxyType int, cfg *config.Config, t
 	validProxies := CheckAllProxies(proxies, testURL, 5*time.Second, threads)
 
 	if len(validProxies) == 0 {
-		return nil, fmt.Errorf("proxy Check failed, Your network may be the problem | The target may not be available")
+		return nil, fmt.Errorf("proxy check failed: your network may be unreachable or the target may not be available")
 	}
 
 	// Save valid proxies to file
