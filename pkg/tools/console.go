@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mhdthariq/MHDDoS/pkg/ui"
 	"github.com/mhdthariq/MHDDoS/pkg/utils"
 )
 
@@ -43,7 +43,13 @@ var (
 // RunConsole runs the interactive console
 func RunConsole() {
 	hostname, _ := os.Hostname()
-	prompt := fmt.Sprintf("%s@MHTools:~# ", hostname)
+	prompt := ui.Info(hostname+"@MHTools:~# ")
+
+	fmt.Println()
+	fmt.Println(ui.Header("  MHDDoS Interactive Tools Console"))
+	fmt.Println(ui.Info("  ─────────────────────────────────────"))
+	fmt.Println("  Type 'help' for available commands")
+	fmt.Println()
 
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -71,13 +77,14 @@ func RunConsole() {
 		case "CLEAR":
 			fmt.Print("\033c")
 		case "EXIT", "QUIT", "Q", "E", "LOGOUT", "CLOSE":
+			ui.PrintInfo("Goodbye!")
 			return
 		case "DSTAT":
 			runDstat()
 		case "CFIP":
-			fmt.Println("CFIP: CloudFlare IP finder - Coming soon")
+			ui.PrintInfo("CloudFlare IP finder - Coming soon")
 		case "DNS":
-			fmt.Println("DNS: DNS lookup tool - Coming soon")
+			ui.PrintInfo("DNS lookup tool - Coming soon")
 		case "CHECK":
 			runCheck(hostname, scanner)
 		case "INFO":
@@ -87,14 +94,29 @@ func RunConsole() {
 		case "PING":
 			runPing(hostname, scanner)
 		default:
-			fmt.Printf("%s command not found\n", command)
+			ui.PrintError("Command '%s' not found. Type 'help' for available commands.", command)
 		}
 	}
 }
 
 func printHelp() {
-	fmt.Println("Tools: DSTAT, CFIP, DNS, CHECK, INFO, TSSRV, PING")
-	fmt.Println("Commands: HELP, CLEAR, EXIT")
+	fmt.Println()
+	fmt.Println(ui.Header("Available Tools:"))
+	fmt.Println()
+	fmt.Printf("  %s    - Network and system statistics monitor\n", ui.Highlight("DSTAT"))
+	fmt.Printf("  %s    - Check if a website is online\n", ui.Highlight("CHECK"))
+	fmt.Printf("  %s     - Get IP address information\n", ui.Highlight("INFO"))
+	fmt.Printf("  %s    - TeamSpeak SRV record lookup\n", ui.Highlight("TSSRV"))
+	fmt.Printf("  %s     - Ping a server\n", ui.Highlight("PING"))
+	fmt.Printf("  %s     - CloudFlare IP finder (coming soon)\n", ui.Highlight("CFIP"))
+	fmt.Printf("  %s      - DNS lookup (coming soon)\n", ui.Highlight("DNS"))
+	fmt.Println()
+	fmt.Println(ui.Header("Commands:"))
+	fmt.Println()
+	fmt.Printf("  %s     - Show this help message\n", ui.Highlight("HELP"))
+	fmt.Printf("  %s    - Clear the screen\n", ui.Highlight("CLEAR"))
+	fmt.Printf("  %s     - Exit the console\n", ui.Highlight("EXIT"))
+	fmt.Println()
 }
 
 // runDstat displays network and system statistics
@@ -416,7 +438,7 @@ func runPing(hostname string, scanner *bufio.Scanner) {
 
 // StopAllAttacks stops all running attacks
 func StopAllAttacks() {
-	log.Println("Stopping all attacks...")
+	ui.PrintInfo("Stopping all attacks...")
 	// In Go, we would signal all goroutines to stop
 	// This is handled through context/channels in the main attack logic
 	os.Exit(0)
