@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -356,7 +357,7 @@ func TestLoadRequiredFile(t *testing.T) {
 		t.Error("LoadRequiredFile() on non-existent file should return error")
 	}
 	// Verify error message contains helpful information
-	if err != nil && !containsSubstring(err.Error(), "doesn't exist") {
+	if err != nil && !strings.Contains(err.Error(), "doesn't exist") {
 		t.Errorf("LoadRequiredFile() error message should contain 'doesn't exist', got: %s", err.Error())
 	}
 
@@ -371,30 +372,15 @@ func TestLoadRequiredFile(t *testing.T) {
 		t.Error("LoadRequiredFile() on empty file should return error")
 	}
 	// Verify error message contains helpful information
-	if err != nil && !containsSubstring(err.Error(), "empty") {
+	if err != nil && !strings.Contains(err.Error(), "empty") {
 		t.Errorf("LoadRequiredFile() error message should contain 'empty', got: %s", err.Error())
 	}
 
 	// Test case 4: File type name in error message
 	_, err = LoadRequiredFile(filepath.Join(tmpDir, "missing.txt"), "user agent")
-	if err != nil && !containsSubstring(err.Error(), "user agent") {
+	if err != nil && !strings.Contains(err.Error(), "user agent") {
 		t.Errorf("LoadRequiredFile() error message should contain file type 'user agent', got: %s", err.Error())
 	}
-}
-
-// Helper function to check if string contains substring
-func containsSubstring(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && len(substr) > 0 && findSubstring(s, substr)))
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
 
 func BenchmarkHumanFormat(b *testing.B) {
