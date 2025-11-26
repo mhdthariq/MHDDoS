@@ -330,6 +330,73 @@ func BenchmarkHumanBytes(b *testing.B) {
 	}
 }
 
+// TestLoadRequiredFile tests the LoadRequiredFile helper function
+func TestLoadRequiredFile(t *testing.T) {
+	// Create a temporary directory
+	tmpDir := t.TempDir()
+
+	// Test case 1: Valid file with content
+	validFile := filepath.Join(tmpDir, "valid.txt")
+	content := "line1\nline2\nline3"
+	if err := os.WriteFile(validFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	lines, err := LoadRequiredFile(validFile, "test")
+	if err != nil {
+		t.Errorf("LoadRequiredFile() error = %v; want nil", err)
+	}
+	if len(lines) != 3 {
+		t.Errorf("LoadRequiredFile() returned %d lines; want 3", len(lines))
+	}
+
+	// Test case 2: Non-existent file
+	_, err = LoadRequiredFile(filepath.Join(tmpDir, "nonexistent.txt"), "test")
+	if err == nil {
+		t.Error("LoadRequiredFile() on non-existent file should return error")
+	}
+	// Verify error message contains helpful information
+	if err != nil && !containsSubstring(err.Error(), "doesn't exist") {
+		t.Errorf("LoadRequiredFile() error message should contain 'doesn't exist', got: %s", err.Error())
+	}
+
+	// Test case 3: Empty file
+	emptyFile := filepath.Join(tmpDir, "empty.txt")
+	if err := os.WriteFile(emptyFile, []byte(""), 0644); err != nil {
+		t.Fatalf("Failed to create empty test file: %v", err)
+	}
+
+	_, err = LoadRequiredFile(emptyFile, "test")
+	if err == nil {
+		t.Error("LoadRequiredFile() on empty file should return error")
+	}
+	// Verify error message contains helpful information
+	if err != nil && !containsSubstring(err.Error(), "empty") {
+		t.Errorf("LoadRequiredFile() error message should contain 'empty', got: %s", err.Error())
+	}
+
+	// Test case 4: File type name in error message
+	_, err = LoadRequiredFile(filepath.Join(tmpDir, "missing.txt"), "user agent")
+	if err != nil && !containsSubstring(err.Error(), "user agent") {
+		t.Errorf("LoadRequiredFile() error message should contain file type 'user agent', got: %s", err.Error())
+	}
+}
+
+// Helper function to check if string contains substring
+func containsSubstring(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
+		(len(s) > 0 && len(substr) > 0 && findSubstring(s, substr)))
+}
+
+func findSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
+
 func BenchmarkHumanFormat(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		HumanFormat(1000000)

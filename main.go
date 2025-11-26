@@ -189,33 +189,17 @@ func runLayer7Attack(method, target string, cfg *config.Config, wg *sync.WaitGro
 	useragentPath := filepath.Join("files", "useragent.txt")
 	referersPath := filepath.Join("files", "referers.txt")
 
-	// Check if useragent file exists
-	if _, err := os.Stat(useragentPath); os.IsNotExist(err) {
-		return fmt.Errorf("the useragent file doesn't exist: %s", useragentPath)
-	}
-
-	// Check if referers file exists
-	if _, err := os.Stat(referersPath); os.IsNotExist(err) {
-		return fmt.Errorf("the referer file doesn't exist: %s", referersPath)
-	}
-
 	// Load user agents
-	userAgents, err := utils.LoadLines(useragentPath)
+	userAgents, err := utils.LoadRequiredFile(useragentPath, "user agent")
 	if err != nil {
-		return fmt.Errorf("failed to load useragent file: %v", err)
-	}
-	if len(userAgents) == 0 {
-		return fmt.Errorf("empty useragent file: %s", useragentPath)
+		return err
 	}
 	ui.PrintSuccess("Loaded %d user agents from %s", len(userAgents), useragentPath)
 
 	// Load referers
-	referers, err := utils.LoadLines(referersPath)
+	referers, err := utils.LoadRequiredFile(referersPath, "referer")
 	if err != nil {
-		return fmt.Errorf("failed to load referer file: %v", err)
-	}
-	if len(referers) == 0 {
-		return fmt.Errorf("empty referer file: %s", referersPath)
+		return err
 	}
 	ui.PrintSuccess("Loaded %d referers from %s", len(referers), referersPath)
 
